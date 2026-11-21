@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Car loan planner</title>
+<style>
+  :root{
+    --bg:#f6f5f2; --card:#ffffff; --ink:#1f2328; --muted:#5f6670; --line:#e3e1dc;
+    --accent:#1f6f6b; --accent-soft:#e3f1ef; --warn:#a8461f; --warn-soft:#fbeae2;
+    --fam:#7a5ea8; --car:#1f6f6b;
+  }
+  :root{color-scheme:light}
+  *{box-sizing:border-box;min-width:0}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  header{padding:22px 20px 8px;max-width:1040px;margin:0 auto}
+  h1{font-size:24px;margin:0 0 4px}
+  .sub{color:var(--muted);margin:0}
+  .draft{display:inline-block;background:var(--warn-soft);color:var(--warn);font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;margin-left:6px;vertical-align:middle}
+  main{max-width:1040px;margin:0 auto;padding:8px 20px 40px;display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+  .part{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700;margin:14px 0 -6px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px}
+  h2{font-size:18px;margin:0 0 4px}
+  h3.sec{font-size:15px;margin:18px 0 8px;padding-top:14px;border-top:1px solid var(--line)}
+  .hint{color:var(--muted);font-size:13px;margin:0 0 14px}
+  .fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:14px 22px}
+  .field label{display:block;font-weight:600;font-size:14px;margin-bottom:4px}
+  .field .row{display:flex;gap:10px;align-items:center}
+  .field input[type=range]{flex:1;accent-color:var(--accent)}
+  .money:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .money{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;padding:0 8px;background:#fff;width:120px}
+  .money span{color:var(--muted);font-size:14px}
+  .money input{border:0;outline:0;width:100%;padding:9px 4px;font:inherit;font-size:16px;text-align:right;background:transparent}
+  select{font:inherit;font-size:16px;min-height:44px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;width:100%}
+  .field small{display:block;color:var(--muted);font-size:12.5px;margin-top:4px}
+  .helper{background:var(--accent-soft);border-radius:8px;padding:8px 10px;font-size:13px;margin-top:6px}
+  .helper input{width:60px;font:inherit;padding:1px 4px;border:1px solid var(--line);border-radius:4px;text-align:right}
+  .sum{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;background:#faf9f6;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:16px}
+  .sum .lbl{font-weight:600} .sum .calc{color:var(--muted);font-size:13px}
+  .sum .amt{font-size:22px;font-weight:700}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:12px;margin-top:12px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .tile .k{font-size:12.5px;color:var(--muted)}
+  .tile .v{font-size:22px;font-weight:700;margin-top:2px}
+  .tile .s{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .tile.hero{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .tile.hero .k,.tile.hero .s{color:#d7ece9}
+  .fromcalc{background:var(--accent-soft);border-radius:8px;padding:10px 12px;font-size:14px;margin-bottom:14px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:8px 8px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}
+  th:first-child,td:first-child{text-align:left}
+  th{font-size:12.5px;color:var(--muted);font-weight:600}
+  td.neg{color:var(--warn);font-weight:600}
+  .scroll{overflow-x:auto}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  .msg{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:10px 12px;font-weight:600}
+  footer{max-width:1040px;margin:0 auto;padding:0 20px 40px;color:var(--muted);font-size:12.5px}
+  footer p{margin:6px 0}
+  td{white-space:nowrap} td:first-child{white-space:normal}
+  @media(max-width:600px){
+    header,main,footer{padding-left:14px;padding-right:14px}
+    .card{padding:14px}
+    #flow,#flow tbody,#flow tr,#flow td{display:block}
+    #flow tr.head{display:none}
+    #flow tr{border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-bottom:10px}
+    #flow td{border:0;padding:3px 0;display:flex;justify-content:space-between;gap:12px;text-align:right}
+    #flow td::before{content:attr(data-l);color:var(--muted);text-align:left}
+    #flow td:first-child{font-weight:700;padding-bottom:6px}
+    #flow td:first-child::before{content:none}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Car loan planner</h1>
+  <p class="sub">Part 1 works out the new car loan. Part 2 shows how it fits with the family loans and your pay, week by week. All dates are Thursday paydays.</p>
+</header>
+
+<main>
+  <div class="part">Part 1</div>
+  <section class="card">
+    <h2>New car loan calculator</h2>
+    <p class="hint">Try different cars, interest rates and loan terms to see what the weekly repayment would be.</p>
+    <div class="fields" id="calcFields"></div>
+    <div class="sum">
+      <div><div class="lbl">Total amount actually borrowed</div><div class="calc" id="borrowCalc"></div></div>
+      <div class="amt" id="borrowAmt"></div>
+    </div>
+    <div class="tiles" id="calcTiles"></div>
+  </section>
+
+  <div class="part">Part 2</div>
+  <section class="card">
+    <h2>Car loan planner</h2>
+    <p class="hint">This uses two assumptions. To change the car, deposit, rate or term, go back to Part 1.</p>
+    <div class="fromcalc" id="fromCalc"></div>
+    <div class="fromcalc" id="famAssume"></div>
+    <div class="fields" id="planFields"></div>
+
+    <h3 class="sec">What this scenario looks like</h3>
+    <div class="tiles" id="planTiles"></div>
+
+    <h3 class="sec">How this looks in your pay each week</h3>
+    <p class="hint">Paydays with the same repayments are grouped together.</p>
+    <div class="fromcalc" id="buyNote" style="background:#faf9f6;border:1px solid var(--line)"></div>
+    <div class="scroll"><table id="flow"></table></div>
+
+  </section>
+</main>
+
+<footer>
+  <p><b>Family loans:</b> $10,414 in total, repaid from Thu 19 Nov 2026. The repayment agreements set $500 a week, with a last payment of $414 on Thu 8 Apr 2027. If a payment slides, the agreements provide for a replacement Schedule 1 and these dates would move.</p>
+  <p><b>How the sums work:</b> the loan establishment fee is added to the amount borrowed. Interest is worked out weekly at the yearly rate ÷ 52, and the weekly repayment is the amount that pays the loan off exactly over the term. The first car repayment comes out of the first Thursday payday at least a week after the purchase date. Lenders usually charge interest monthly or fortnightly, so a real quote will differ slightly.</p>
+  <p><b>Paying extra:</b> paying more than the weekly repayment finishes the loan sooner and saves interest, but only if the loan allows extra repayments and early payout without a fee. Check this before signing.</p>
+  <p><b>Your figures stay on this phone.</b> The page remembers what you last entered on this device only. Nothing you type is sent anywhere. <button id="resetBtn" style="font:inherit;font-size:13px;color:var(--accent);background:none;border:1px solid var(--accent);border-radius:6px;padding:6px 10px;margin-left:4px;cursor:pointer">Reset to starting figures</button></p>
+  <p>This is a planning tool, not financial advice.</p>
+</footer>
+
+<script>
+// ---------- CALC START ----------
+const DAY = 86400000;
+function d(y,m,dd){ return Date.UTC(y,m-1,dd); }
+function addWeeks(t,n){ return t + n*7*DAY; }
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+function fmt(t, withDay){ const x=new Date(t); return (withDay?DOW[x.getUTCDay()]+" ":"")+x.getUTCDate()+" "+MON[x.getUTCMonth()]+" "+x.getUTCFullYear(); }
+function money(v, cents){ const s=Math.abs(v).toLocaleString("en-AU",{minimumFractionDigits:cents?2:0,maximumFractionDigits:cents?2:0}); return (v<0?"−$":"$")+s; }
+
+const FAMILY_START = d(2026,11,19);
+const FAMILY_TOTAL = 10414;
+function familySchedule(weekly){
+  const a=[]; let left=FAMILY_TOTAL, t=FAMILY_START;
+  if (weekly <= 0) return a;
+  while (left > 0.005){ const p=Math.min(weekly,left); a.push({t,amt:p}); left-=p; t=addWeeks(t,1); }
+  return a;
+}
+
+// Weekly repayment that pays off `principal` over `years` at `ratePct` a year (rounded up to the cent).
+function weeklyRepayment(principal, ratePct, years){
+  const n = Math.round(years*52), r = ratePct/100/52;
+  if (principal <= 0) return 0;
+  const a = r===0 ? principal/n : principal*r/(1-Math.pow(1+r,-n));
+  return Math.ceil(a*100)/100;
+}
+// Week-by-week repayment of the loan.
+function simulate(principal, ratePct, weekly, firstPay){
+  const r = ratePct/100/52;
+  let bal = Math.max(0, principal), interest = 0, t = firstPay;
+  const pays = [];
+  if (bal <= 0) return {pays, interest:0, principal:0};
+  while (bal > 0.005 && pays.length < 1560){
+    const i = bal*r; interest += i; bal += i;
+    const p = Math.min(weekly, bal); bal -= p;
+    pays.push({t, amt:p}); t = addWeeks(t,1);
+  }
+  return {pays, interest, principal};
+}
+// First car repayment: the first Thursday payday at least one week after the purchase date.
+function firstPayday(buy){ const t=buy+7*DAY; const dow=new Date(t).getUTCDay(); return t + ((4-dow+7)%7)*DAY; }
+function loan(price, deposit, fee, rate, years, buy){
+  const principal = Math.max(0, price - deposit + fee);
+  const weekly = weeklyRepayment(principal, rate, years);
+  const sim = simulate(principal, rate, weekly, firstPayday(buy));
+  return {...sim, weekly};
+}
+// ---------- CALC END ----------
+
+let FAMILY, FAMILY_END, WAIT_DATE;
+function setFamily(w){ FAMILY=familySchedule(w); FAMILY_END=FAMILY[FAMILY.length-1].t; WAIT_DATE=addWeeks(FAMILY_END,1); }
+
+const S = { price:20000, deposit:0, fee:499, rate:11, years:5, family:500, buy:d(2026,12,3), pay:"" };
+function iso(t){ return new Date(t).toISOString().slice(0,10); }
+function fromIso(s){ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||""); return m? d(+m[1],+m[2],+m[3]) : NaN; }
+const DEFAULTS = {...S};
+const KEY = "car-loan-planner-v1";
+try { const saved = JSON.parse(localStorage.getItem(KEY)||"null");
+  if (saved) for (const k of ["price","deposit","fee","rate","years","buy","pay"]) if (k in saved && (typeof saved[k]==="number" || (k==="pay" && saved[k]===""))) S[k]=saved[k];
+} catch(e){}
+function remember(){ try { localStorage.setItem(KEY, JSON.stringify({price:S.price,deposit:S.deposit,fee:S.fee,rate:S.rate,years:S.years,buy:S.buy,pay:S.pay})); } catch(e){} }
+const parse = v => parseFloat(String(v).replace(/[$,\s%]/g,""));
+
+const CALC_FIELDS = [
+  {id:"price", label:"Car drive-away price", min:5000, max:45000, step:500, pre:"$", help:"Include rego, stamp duty and dealer charges."},
+  {id:"deposit", label:"Deposit saved to apply to the loan", min:0, max:20000, step:100, pre:"$", help:"Money you pay up front so you borrow less."},
+  {id:"fee", label:"Loan establishment fee", min:0, max:1500, step:1, pre:"$", help:"The one-off fee the lender charges to set up the loan. It's added to the amount borrowed."},
+  {id:"rate", label:"Interest rate on new car loan (per year)", min:4, max:20, step:0.25, post:"%", help:"Use the rate a lender quotes you. 11% is a typical rate for a loan under $30,000."},
+  {id:"years", label:"Loan term", type:"years", help:"How long the loan runs. Most lenders offer 1 to 7 years, and some limit used cars to 5 years. A longer term means a lower weekly repayment but more interest."},
+];
+const PLAN_FIELDS = [
+  {id:"buy", label:"Purchase date", type:"date", help:"Pick the day you expect to buy the car. The first car repayment comes out of your first payday at least a week later."},
+  {id:"pay", label:"Average weekly take-home pay", type:"blank", help:"Leave blank if you're not sure yet.", guide:true},
+];
+
+function buildFields(boxId, list){
+  const box = document.getElementById(boxId);
+  for (const f of list){
+    const w=document.createElement("div"); w.className="field";
+    let html = `<label for="${f.id}">${f.label}</label><div class="row">`;
+    if (f.type==="date") html += `<input type="date" id="${f.id}" value="${iso(S.buy)}" min="2026-11-19" max="2029-12-31" style="font:inherit;font-size:16px;min-height:44px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:#fff">`;
+    else if (f.type==="years") html += `<select id="${f.id}">` + [1,2,3,4,5,6,7].map(y=>`<option value="${y}" ${y===S.years?"selected":""}>${y} year${y>1?"s":""} (${y*52} weeks)</option>`).join("") + `</select>`;
+    else if (f.type==="blank") html += `<div class="money" style="width:160px"><span>$</span><input id="${f.id}" inputmode="decimal" placeholder="e.g. 1,400" value="${S.pay}"></div><span style="color:var(--muted);font-size:13px">per week</span>`;
+    else {
+      html += `<input type="range" id="${f.id}-r" min="${f.min}" max="${f.max}" step="${f.step}" value="${S[f.id]}">`;
+      html += `<div class="money">${f.pre?`<span>${f.pre}</span>`:""}<input id="${f.id}" inputmode="decimal" value="${S[f.id]}">${f.post?`<span>${f.post}</span>`:""}</div>`;
+    }
+    html += `</div><small>${f.help}</small>`;
+    if (f.guide) html += `<div class="helper"><b>How to work this out:</b> while you're doing agency work, use an average over a year so it covers the weeks between jobs. One way is to add up the take-home pay on all your payslips since you started agency work, then divide that total by the number of weeks since you started.</div>`;
+    w.innerHTML = html; box.appendChild(w);
+
+    const num=document.getElementById(f.id), rng=document.getElementById(f.id+"-r");
+    if (f.type==="date"){ num.addEventListener("change",()=>{ const t=fromIso(num.value); if(!isNaN(t)){ S.buy=t; render(); } }); continue; }
+    if (f.type==="years"){ num.addEventListener("change",()=>{S[f.id]=+num.value; render();}); continue; }
+    if (f.type==="blank"){ num.addEventListener("input",()=>{const v=parse(num.value); S.pay=isNaN(v)?"":v; render();}); continue; }
+    rng.addEventListener("input",()=>{ S[f.id]=+rng.value; num.value=rng.value; render(); });
+    num.addEventListener("input",()=>{ const v=parse(num.value); if(!isNaN(v)){ S[f.id]=v; rng.value=v; render(); } });
+  }
+}
+
+function cashflow(sim){
+  const map = new Map();
+  for (const f of FAMILY) map.set(f.t,{fam:f.amt,car:0});
+  for (const p of sim.pays){ const e=map.get(p.t)||{fam:0,car:0}; e.car=p.amt; map.set(p.t,e); }
+  const keys=[...map.keys()].sort((a,b)=>a-b);
+  const rows=[];
+  for (const t of keys){
+    const e=map.get(t), last=rows[rows.length-1];
+    const same = last && Math.abs(last.fam-e.fam)<0.005 && Math.abs(last.car-e.car)<0.005 && last.to===addWeeks(t,-1);
+    if (same){ last.to=t; last.n++; } else rows.push({from:t,to:t,n:1,fam:e.fam,car:e.car});
+  }
+  return rows;
+}
+function lastDate(s){ return s.pays.length ? s.pays[s.pays.length-1].t : null; }
+
+function render(){
+  remember();
+  setFamily(S.family);
+  const L = loan(S.price, S.deposit, S.fee, S.rate, S.years, S.buy);
+  const pay = S.pay===""?null:S.pay;
+
+  // ---- Part 1
+  document.getElementById("borrowCalc").textContent = `${money(S.price)} car − ${money(S.deposit)} deposit + ${money(S.fee)} loan establishment fee`;
+  document.getElementById("borrowAmt").textContent = money(L.principal);
+  document.getElementById("calcTiles").innerHTML = L.principal<=0
+    ? `<div class="tile" style="grid-column:1/-1">The deposit covers the whole car, so there's nothing to borrow.</div>`
+    : `<div class="tile hero"><div class="k">Weekly repayment</div><div class="v">${money(L.weekly,true)}</div><div class="s">every Thursday payday</div></div>
+       <div class="tile"><div class="k">Weeks to repay the loan</div><div class="v">${L.pays.length}</div><div class="s">${S.years} year${S.years>1?"s":""}</div></div>
+       <div class="tile"><div class="k">Total interest paid</div><div class="v">${money(L.interest)}</div><div class="s">total repaid ${money(L.principal+L.interest)}</div></div>`;
+
+  // ---- Part 2
+  document.getElementById("fromCalc").innerHTML = L.principal<=0 ? "<b>Assumption #1:</b> no car loan needed." :
+    `<b>Assumption #1:</b> ${money(L.weekly,true)} a week on the new car loan, ${money(L.principal)} borrowed at ${S.rate}% over ${S.years} year${S.years>1?"s":""}.`;
+  document.getElementById("famAssume").innerHTML = `<b>Assumption #2:</b> $500 a week is paid on the family loans from Thu 19 Nov 2026, with a final payment of $414 on Thu 8 Apr 2027, as set out in the repayment agreements.`;
+
+  const last = lastDate(L);
+  document.getElementById("planTiles").innerHTML = `
+    <div class="tile"><div class="k">Amount borrowed</div><div class="v">${money(L.principal)}</div><div class="s">price − deposit + loan establishment fee</div></div>
+    <div class="tile"><div class="k">Total interest</div><div class="v">${money(L.interest)}</div><div class="s">total repaid ${money(L.principal+L.interest)}</div></div>
+    <div class="tile hero"><div class="k">New car loan paid off by</div><div class="v">${last?fmt(last,true):"Nothing to borrow"}</div><div class="s">${L.pays.length} weekly repayments</div></div>`;
+
+  document.getElementById("buyNote").innerHTML = L.principal<=0 ? `You buy the car on <b>${fmt(S.buy,true)}</b> with no loan needed.` :
+    `You buy the car on <b>${fmt(S.buy,true)}</b>. The first new car loan repayment comes out of your pay on <b>${fmt(firstPayday(S.buy),true)}</b>.`;
+  const flow = cashflow(L);
+  document.getElementById("flow").innerHTML =
+    `<tr class="head"><th>Pay dates</th><th>Number of pays</th><th><span class="dot" style="background:var(--fam)"></span>Family loan</th><th><span class="dot" style="background:var(--car)"></span>New car loan</th><th>Total weekly repayments</th><th>Remaining take-home pay</th></tr>` +
+    flow.map(r=>{ const tot=r.fam+r.car; const range=r.n===1?fmt(r.from,true):`${fmt(r.from,true)} – ${fmt(r.to,true)}`;
+      return `<tr><td>${range}</td><td data-l="Number of pays">${r.n}</td><td data-l="Family loan">${r.fam?money(r.fam,true):"–"}</td><td data-l="New car loan">${r.car?money(r.car,true):"–"}</td><td data-l="Total weekly repayments"><b>${money(tot,true)}</b></td><td data-l="Remaining take-home pay" class="${pay!==null&&pay-tot<0?"neg":""}">${pay===null?"–":money(pay-tot,true)}</td></tr>`; }).join("");
+
+}
+
+function start(){
+  document.getElementById("calcFields").innerHTML=""; document.getElementById("planFields").innerHTML="";
+  buildFields("calcFields", CALC_FIELDS); buildFields("planFields", PLAN_FIELDS); render();
+}
+document.getElementById("resetBtn").addEventListener("click",()=>{ Object.assign(S, DEFAULTS); try{localStorage.removeItem(KEY);}catch(e){} start(); });
+start();
+</script>
+</body>
+</html>
